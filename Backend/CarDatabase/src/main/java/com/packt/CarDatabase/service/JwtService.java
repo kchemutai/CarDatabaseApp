@@ -1,47 +1,60 @@
 package com.packt.CarDatabase.service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
-import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.Date;
-@Component
-public class JwtService {
-    static final long EXPIRATIONTIME = 86400000;
-    // 1 day in ms. Should be shorter in production.
-    static final String PREFIX = "Bearer";
-    // Generate secret key. Only for the demonstration
-    // You should read it from the application configuration
-    static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Generate signed JWT token
-    public String getToken(String username) {
-        String token = Jwts.builder()
-                .setSubject(username)
-                .setExpiration(new Date(System.currentTimeMillis()
-                        + EXPIRATIONTIME))
-                .signWith(key)
-                .compact();
-        return token;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+@Service
+public class JwtService {
+
+    private static final long ACCESS_TOKEN_EXPIRATION = 15 * 60 * 1000; // 15 minutes
+    private final SecretKey secretKey;
+
+    public JwtService(@Value("${jwt.secret}") String jwtSecret) {
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Get a token from request Authorization header,
-    // verify a token and get username
-    public String getAuthUser(HttpServletRequest
-                                      request) {
-        String token = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (token != null) {
-            String user = Jwts.parserBuilder()
-                    .setSigningKey(key)
+    public String generateAccessToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String extractUsername(String token) {
+
+        Claims claims =
+                Jwts.parserBuilder()
+                        .setSigningKey(secretKey)
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
+
+        return claims.getSubject();
+    }
+
+    public boolean isValid(String token) {
+
+        try {
+
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
                     .build()
-                    .parseClaimsJws(token.replace(PREFIX, ""))
-                            .getBody()
-                            .getSubject();
-            if (user != null) return user;
+                    .parseClaimsJws(token);
+
+            return true;
+
+        } catch (Exception ex) {
+
+            return false;
         }
-        return null;
     }
 }
