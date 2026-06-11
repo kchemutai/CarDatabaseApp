@@ -1,9 +1,12 @@
-import { CarResponse } from "../types";
-import axios, { AxiosRequestConfig } from "axios";
-import { Car, CarEntry } from "../types";
+import { AxiosRequestConfig } from "axios";
+
+import { api } from "./apiClient";
+
+import { Car, CarEntry, CarResponse } from "../types";
 
 const getAxiosConfig = (): AxiosRequestConfig => {
 	const token = sessionStorage.getItem("jwt");
+
 	return {
 		headers: {
 			Authorization: token,
@@ -13,29 +16,25 @@ const getAxiosConfig = (): AxiosRequestConfig => {
 };
 
 export const getCars = async (): Promise<CarResponse[]> => {
-	const response = await axios.get(
-		import.meta.env.VITE_API_URL + "/api/cars",
-		getAxiosConfig(),
-	);
+	const response = await api.get("/api/cars", getAxiosConfig());
 
 	return response.data._embedded.cars;
 };
 
-export const deleteCar = async (link: string): Promise<CarResponse> => {
-	const response = await axios.delete(link, getAxiosConfig());
+export const deleteCar = async (link: string): Promise<void> => {
+	const response = await api.delete(link, getAxiosConfig());
+
 	return response.data;
 };
 
-export const addCar = async (car: Car): Promise<CarResponse> => {
-	const response = await axios.post(
-		import.meta.env.VITE_API_URL + "/api/cars",
-		car,
-		getAxiosConfig(),
-	);
+export const addCar = async (car: Car): Promise<void> => {
+	const response = await api.post("/api/cars", car, getAxiosConfig());
+
 	return response.data;
 };
 
-export const updateCar = async (carEntry: CarEntry): Promise<CarResponse> => {
-	const response = await axios.put(carEntry.url, carEntry.car, getAxiosConfig());
+export const updateCar = async (carEntry: CarEntry): Promise<void> => {
+	const response = await api.put(carEntry.url, carEntry.car, getAxiosConfig());
+
 	return response.data;
 };
