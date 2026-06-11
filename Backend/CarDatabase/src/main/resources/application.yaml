@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: CarDatabase
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=UTC
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    rest:
+      base-path: /api
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+
